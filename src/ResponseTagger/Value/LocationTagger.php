@@ -1,27 +1,29 @@
 <?php
-
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ */
 namespace EzSystems\PlatformHttpCacheBundle\ResponseTagger\Value;
 
-use EzSystems\PlatformHttpCacheBundle\ResponseConfigurator\ResponseCacheConfigurator;
-use EzSystems\PlatformHttpCacheBundle\ResponseTagger\ResponseTagger;
-use Symfony\Component\HttpFoundation\Response;
+use eZ\Publish\API\Repository\Values\ValueObject;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use EzSystems\PlatformHttpCacheBundle\Handler\TagHandlerInterface;
+use EzSystems\PlatformHttpCacheBundle\ResponseTagger\ValueTaggerInterface;
 
-class LocationTagger implements ResponseTagger
+class LocationTagger implements ValueTaggerInterface
 {
-    public function tag(ResponseCacheConfigurator $configurator, Response $response, $value)
+    public function tag(TagHandlerInterface $tagHandler, ValueObject $value)
     {
         if (!$value instanceof Location) {
             return $this;
         }
 
         if ($value->id !== $value->contentInfo->mainLocationId) {
-            $configurator->addTags($response, ['location-' . $value->id]);
+            $tagHandler->addTags(['location-' . $value->id]);
         }
 
-        $configurator->addTags($response, ['parent-' . $value->parentLocationId]);
-        $configurator->addTags(
-            $response,
+        $tagHandler->addTags(['parent-' . $value->parentLocationId]);
+        $tagHandler->addTags(
             array_map(
                 function ($pathItem) {
                     return 'path-' . $pathItem;

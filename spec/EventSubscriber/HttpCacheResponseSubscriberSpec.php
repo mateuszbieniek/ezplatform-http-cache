@@ -6,7 +6,7 @@
 namespace spec\EzSystems\PlatformHttpCacheBundle\EventSubscriber;
 
 use EzSystems\PlatformHttpCacheBundle\ResponseConfigurator\ResponseCacheConfigurator;
-use EzSystems\PlatformHttpCacheBundle\ResponseTagger\ResponseTagger;
+use EzSystems\PlatformHttpCacheBundle\ResponseTagger\ViewTaggerInterface;
 use eZ\Publish\Core\MVC\Symfony\View\CachableView;
 use eZ\Publish\Core\MVC\Symfony\View\View;
 use PhpSpec\ObjectBehavior;
@@ -24,7 +24,7 @@ class HttpCacheResponseSubscriberSpec extends ObjectBehavior
         Response $response,
         ParameterBag $requestAttributes,
         ResponseCacheConfigurator $configurator,
-        ResponseTagger $dispatcherTagger
+        ViewTaggerInterface $dispatcherTagger
     ) {
         $request->attributes = $requestAttributes;
         $event->getRequest()->willReturn($request);
@@ -63,7 +63,7 @@ class HttpCacheResponseSubscriberSpec extends ObjectBehavior
         ResponseCacheConfigurator $configurator,
         CachableView $view,
         ParameterBag $requestAttributes,
-        ResponseTagger $dispatcherTagger
+        ViewTaggerInterface $dispatcherTagger
     ) {
         $requestAttributes->get('view')->willReturn($view);
         $view->isCacheEnabled()->willReturn(true);

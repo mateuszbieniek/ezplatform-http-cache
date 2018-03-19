@@ -18,7 +18,7 @@ class TagHandler extends FOSTagHandler implements TagHandlerInterface
 {
     private $cacheManager;
     private $purgeClient;
-    private $tagsHeader;
+    protected $tagsHeader;
 
     public function __construct(CacheManager $cacheManager, $tagsHeader, $purgeClient)
     {
@@ -40,24 +40,31 @@ class TagHandler extends FOSTagHandler implements TagHandlerInterface
 
     public function tagResponse(Response $response, $replace = false)
     {
-        if ($this->hasTags()) {
-            $this->addTagHeaders($response, explode(',', $this->getTagsHeaderValue()));
+        $tags = [];
+        if (!$replace && $response->headers->has($this->tagsHeader)) {
+            $headerValue = $response->headers->get($this->tagsHeader);
+            if ('' !== $headerValue) {
+                // compat code for possible array seperated value
+                if (strpos($headerValue, ',') !== false) {
+                    $tags = explode(',', $headerValue);
+                } else {
+                    $tags = explode(' ', $headerValue);
+                }
+            }
         }
+
+
+        if ($this->hasTags()) {
+            $tags = array_merge($tags, explode(',', $this->getTagsHeaderValue()));
+        }
+
+        if (empty($tags)) {
+            $response->headers->remove($this->tagsHeader);
+        } else {
+            $response->headers->set($this->tagsHeader, implode(' ', array_unique($tags)));
+        }
+
 
         return $this;
-    }
-
-    public function addTagHeaders(Response $response, array $tags)
-    {
-        if ($response->headers->has($this->tagsHeader)) {
-            // Get as array and handle both array based and string based values
-            $headerValue = $response->headers->get($this->tagsHeader, null, false);
-            $tags = array_merge(
-                $tags,
-                count($headerValue) === 1 ? explode(' ', $headerValue[0]) : $headerValue
-            );
-        }
-
-        $response->headers->set($this->tagsHeader, implode(' ', array_unique($tags)));
     }
 }

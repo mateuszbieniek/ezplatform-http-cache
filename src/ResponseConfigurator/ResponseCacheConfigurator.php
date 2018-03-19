@@ -29,16 +29,4 @@ interface ResponseCacheConfigurator
      * @return ResponseCacheConfigurator
      */
     public function setSharedMaxAge(Response $response);
-
-    /**
-     * Adds $tags to the response's cache tags header.
-     *
-     * @todo Change to call addTags(), do separate call for writing them to response to avoid serialization on each call.
-     *
-     * @param \Symfony\Component\HttpFoundation\Response $response
-     * @param string|array $tags Single tag, or array of tags
-     *
-     * @return ResponseCacheConfigurator
-     */
-    public function addTags(Response $response, $tags);
 }

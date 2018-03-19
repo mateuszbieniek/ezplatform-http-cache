@@ -33,11 +33,6 @@ class ConfigurableResponseCacheConfigurator implements ResponseCacheConfigurator
      */
     private $defaultTtl;
 
-    /**
-     * @var TagHandlerInterface
-     */
-    private $tagHandler;
-
     public function __construct($enableViewCache, $enableTtlCache, $defaultTtl, TagHandlerInterface  $tagHandler)
     {
         $this->enableViewCache = $enableViewCache;
@@ -59,15 +54,6 @@ class ConfigurableResponseCacheConfigurator implements ResponseCacheConfigurator
     {
         if ($this->enableViewCache && $this->enableTtlCache && !$response->headers->hasCacheControlDirective('s-maxage')) {
             $response->setSharedMaxAge($this->defaultTtl);
-        }
-
-        return $this;
-    }
-
-    public function addTags(Response $response, $tags)
-    {
-        if ($this->enableViewCache) {
-            $this->tagHandler->addTagHeaders($response, $tags);
         }
 
         return $this;
