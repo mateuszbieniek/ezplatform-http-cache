@@ -23,27 +23,38 @@ use FOS\HttpCacheBundle\CacheManager;
  */
 class TagHandler extends FOSTagHandler
 {
+    const PRIORITIZED_TAGS = [
+        'content',
+        'location',
+    ];
+
     private $purgeClient;
+
     private $prefixService;
+
     private $tagsHeader;
-    /** @var int|null */
+
     private $tagsHeaderMaxLength;
-    /** @var LoggerInterface */
+
+    private $tagsReducedTtl;
+
     private $logger;
 
     public function __construct(
         CacheManager $cacheManager,
-        $tagsHeader,
+        string $tagsHeader,
         PurgeClientInterface $purgeClient,
         RepositoryTagPrefix $prefixService,
         LoggerInterface $logger,
-        $maxTagsHeaderLength = null
+        int $maxTagsHeaderLength = null,
+        int $tagsReducedTtl = null
     ) {
         $this->tagsHeader = $tagsHeader;
         $this->purgeClient = $purgeClient;
         $this->prefixService = $prefixService;
         $this->logger = $logger;
         $this->tagsHeaderMaxLength = $maxTagsHeaderLength;
+        $this->tagsReducedTtl = $tagsReducedTtl;
 
         parent::__construct($cacheManager, $tagsHeader);
         $this->addTags(['ez-all']);
@@ -91,11 +102,16 @@ class TagHandler extends FOSTagHandler
                 $tags[] = 'ez-all';
             }
 
-            $tagsString = implode(' ', $tags);
+            $tagsString = implode(' ', $this->tagsHeaderMaxLength ? $this->sortTags($tags) : $tags);
             if ($this->tagsHeaderMaxLength && strlen($tagsString) > $this->tagsHeaderMaxLength) {
                 $tagsString = trim(substr($tagsString, 0, strrpos(
                     substr($tagsString, 0, $this->tagsHeaderMaxLength + 1), ' '
                 )));
+
+                if($this->tagsReducedTtl) {
+                    $response->setSharedMaxAge($this->tagsReducedTtl);
+                }
+
                 $this->logger->warning(
                     'HTTP Cache tags header max length reached and truncated to ' . $this->tagsHeaderMaxLength
                 );
@@ -105,5 +121,35 @@ class TagHandler extends FOSTagHandler
         }
 
         return $this;
+    }
+
+    /**
+     * @param string[] $tags
+     * @return string[]
+     */
+    private function sortTags(array $tags): array {
+        uasort($tags, function ($a, $b) {
+            $a = substr($a, 0, strripos($a, '-'));
+            $b = substr($b, 0, strripos($b, '-'));
+
+            $priorityA = array_search($a, self::PRIORITIZED_TAGS);
+            $priorityB = array_search($b, self::PRIORITIZED_TAGS);
+
+            if(false === $priorityA) {
+                return 1;
+            }
+
+            if(false === $priorityB) {
+                return -1;
+            }
+
+            if($priorityA > $priorityB) {
+                return 1;
+            }
+
+            return -1;
+        });
+
+        return $tags;
     }
 }
